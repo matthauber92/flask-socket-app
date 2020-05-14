@@ -3,9 +3,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Connect to websocket
     var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port);
 
-    if(!localStorage.getItem("user") || localStorage.getItem("user") == 'undefined' || localStorage.getItem("user") == null) {
+    if(!sessionStorage.getItem("user") || sessionStorage.getItem("user") == 'undefined') {
        var displayName = prompt("Please enter your display name", "Matt");
-       localStorage.setItem("user", displayName);
+       sessionStorage.setItem("user", displayName);
     }
 
     // Retrieve username
@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Send messages
     document.querySelector('#send_message').onclick = () => {
         socket.emit('incoming-msg', {'msg': document.querySelector('#user_message').value,
-            'username': localStorage.getItem("user"), 'room': room});
+            'username': sessionStorage.getItem("user"), 'room': room});
 
         document.querySelector('#user_message').value = '';
     };
@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Trigger 'leave' event if user was previously on a room
     function leaveRoom(room) {
-        socket.emit('leave', {'username': localStorage.getItem("user"), 'room': room});
+        socket.emit('leave', {'username': sessionStorage.getItem("user"), 'room': room});
 
         document.querySelectorAll('.select-room').forEach(li => {
             li.style.color = "black";
@@ -107,7 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function joinRoom(room) {
 
         // Join room
-        socket.emit('join', {'username': localStorage.getItem("user"), 'room': room});
+        socket.emit('join', {'username': sessionStorage.getItem("user"), 'room': room});
 
         // Highlight selected room
         document.querySelector('#' + CSS.escape(room)).style.color = "#ffc107";

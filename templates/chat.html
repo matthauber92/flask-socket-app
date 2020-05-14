@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Flask/SocketIO Chat App</title>
+
+        <!-- Bootstrap -->
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+
+        <!-- Custom css for chat pages -->
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles/chat_style.css') }}">
+    </head>
+
+    <body>
+
+        <div class="wrapper">
+
+            <nav class="navbar navbar-expand-sm navbar-light fixed-top" style="background-color: #66a1ee">
+                <div class="container-fluid">
+                    <div id="show-sidebar-button" class="cursor-pointer">
+                        <i class="fas fa-plus-circle "></i>
+                        <span>Rooms</span>
+                    </div>
+
+                    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                    </button>
+                </div>
+            </nav>
+
+            <div id="main-section">
+                <nav id="sidebar">
+                  <div id="create">
+                    <button onclick="createRoom()" type="button" class="btn btn-info mb-1">Create Room</button>
+                  </div>
+                    <h4>Rooms</h4>
+                    <ul id="rooms">
+                    {% for room in rooms %}
+                        <li id="{{ room|title }}" class="select-room cursor-pointer">{{ room|title }}</li>
+                    {% endfor %}
+                  </ul>
+                </nav>
+
+                <div id="rightside-pannel">
+                    <div id="display-message-section">
+                    </div>
+                   <div id="input-area" class="input-group mb-3">
+                        <input type="text" id="user_message" class="form-control" placeholder="Type here..." aria-label="Type a message" aria-describedby="basic-addon2" autocomplete="off">
+                        <div class="input-group-append">
+                            <button id="send_message" class="btn btn-warning" type="button">SEND <i class="fas fa-paper-plane"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Get username -->
+        <span id="get-username">{{ username }}</span>
+
+        <!-- Custom event JS -->
+        <script src="{{ url_for('static', filename='scripts/events.js') }}"></script>
+
+        <!-- SocketIO JS -->
+        <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>
+
+        <!-- Custom SocketIO JS -->
+        <script src="{{ url_for('static', filename='scripts/socketio.js') }}"></script>
+
+        <!-- Bootstrap -->
+        <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+
+        <script>
+        // Connect to websocket
+        var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port);
+        function createRoom() {
+          var room = prompt("Please enter room name", "Test Room");
+          socket.emit("create_room", {"room":room, "user":localStorage.getItem("user")});
+          // update room list
+          $.ajax({
+             type: "GET",
+             url: "{{ url_for('getRooms') }}",
+             datatype: "json",
+             success: function(response){
+                var li = document.createElement('li');
+                li.setAttribute("id", response.slice(-1)[0]);
+                li.setAttribute("class", "select-room cursor-pointer");
+                li.innerHTML = response.slice(-1)[0];
+                li.onclick = () => {
+                  // leave room
+                  socket.emit('leave', {'username': localStorage.getItem("user"), 'room': room});
+                  document.querySelectorAll('.select-room').forEach(li => {
+                      li.style.color = "black";
+                  });
+
+                  //join new room
+                  socket.emit('join', {'username': localStorage.getItem("user"), 'room': room});
+
+                  document.querySelector('#' + CSS.escape(room)).style.color = "#ffc107";
+                  document.querySelector('#' + CSS.escape(room)).style.backgroundColor = "white";
+                  document.querySelector('#display-message-section').innerHTML = '';
+                  document.querySelector("#user_message").focus();
+                };
+                $('#rooms').append(li);
+             },
+             error: function(e) {
+              console.log("Fail", e);
+            }
+         });
+        }
+        </script>
+        <!-- Font Awesome JS -->
+        <script defer src="https://use.fontawesome.com/releases/v5.0.13/js/solid.js" integrity="sha384-tzzSw1/Vo+0N5UhStP3bvwWPq+uvzCMfrN1fEFe+xBmv1C/AtVX5K0uZtmcHitFZ" crossorigin="anonymous"></script>
+        <script defer src="https://use.fontawesome.com/releases/v5.0.13/js/fontawesome.js" integrity="sha384-6OIrr52G08NpOFSZdxxz1xdNSndlD4vdcf/q2myIUVO0VsqaGHJsB0RaBE01VTOY" crossorigin="anonymous"></script>
+    </body>
+</html>
